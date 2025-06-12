@@ -9,11 +9,12 @@ app.use(cors());
 app.use(express.json());
 
 let datosGuardados = null;
+let yaFueEnviado = false;
 
 app.post("/bridge", async (req, res) => {
   try {
-    // Guardamos los datos para usarlos después con GET
     datosGuardados = req.body;
+    yaFueEnviado = false; // Reiniciamos la bandera
 
     console.log("Datos recibidos del flujo A y guardados:");
     console.log(datosGuardados);
@@ -37,7 +38,10 @@ app.get("/bridge", async (req, res) => {
       return res.status(404).json({ error: "No hay datos guardados desde POST aún" });
     }
 
-    // Clonamos los datos y le añadimos el aprobado
+    if (yaFueEnviado) {
+      return res.status(403).json({ error: "Los datos ya fueron reenviados previamente" });
+    }
+
     const datosParaEnviar = {
       ...datosGuardados,
       aprobado: aprobado,
@@ -54,6 +58,8 @@ app.get("/bridge", async (req, res) => {
 
     console.log("Reenviado a flujo B desde GET:");
     console.log(respuesta.data);
+
+    yaFueEnviado = true; // Marcamos como enviado para evitar reenvíos
 
     res.json({ mensaje: "Datos reenviados con éxito al flujo B desde GET" });
   } catch (error) {
