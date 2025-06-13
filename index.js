@@ -1,20 +1,32 @@
 import express from "express";
 import cors from "cors";
 import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config()
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY || "CEMEX-Z91bCm83LdA5yXq0MvR6eK2p";
 
-app.use(cors());
+const verifyAPIKey = (req, res, next) => {
+  const token = req.headers["x-api-key"];
+  if (token !== API_KEY) {
+    return res.status(403).json({ error: "Acceso no autorizado" });
+  }
+  next();
+};
+
+app.use(cors({origin: false}));
 app.use(express.json());
 
 let datosGuardados = null;
 let yaFueEnviado = false;
 
-app.post("/bridge", async (req, res) => {
+app.post("/bridge", verifyAPIKey ,async (req, res) => {
   try {
     datosGuardados = req.body;
-    yaFueEnviado = false; // Reiniciamos la bandera
+    yaFueEnviado = false; 
 
     console.log("Datos recibidos del flujo A y guardados:");
     console.log(datosGuardados);
@@ -59,7 +71,7 @@ app.get("/bridge", async (req, res) => {
     console.log("Reenviado a flujo B desde GET:");
     console.log(respuesta.data);
 
-    yaFueEnviado = true; // Marcamos como enviado para evitar reenvíos
+    yaFueEnviado = true; 
 
     res.json({ mensaje: "Datos reenviados con éxito al flujo B desde GET" });
   } catch (error) {
